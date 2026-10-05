@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>服装店库存管理系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* 顶部导航 */
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(79, 70, 229, 0.3);
+        }
+
+        /* 统计卡片 */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-card .label {
+            font-size: 13px;
+            color: #6b7280;
+            margin-bottom: 8px;
+        }
+
+        .stat-card .value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .stat-card .value.green { color: #10b981; }
+        .stat-card .value.yellow { color: #f59e0b; }
+        .stat-card .value.red { color: #ef4444; }
+        .stat-card .value.purple { color: #7c3aed; }
+
+        /* 表格区域 */
+        .table-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .table-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-header h3 {
+            font-size: 16px;
+            color: #111827;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-box input {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .table-body {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #6b7280;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        tbody tr {
+            transition: background 0.15s;
+        }
+
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* 徽章 */
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-green {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-yellow {
+            background: #fef9c3;
+            color: #854d0e;
+        }
+
+        .badge-red {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* 按钮 */
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: #4f46e5;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #4338ca;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #d97706;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-sm {
+            padding: 4px 10px;
+            font-size: 12px;
+        }
+
+        /* 模态框 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal h3 {
+            margin-bottom: 20px;
+            color: #111827;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .modal-footer {
+            margin-top: 24px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #9ca3af;
+        }
+
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 16px;
+            }
+            
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .table-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 顶部导航 -->
+        <div class="header">
+            <div>
+                <h1>👕 服装店库存管理系统</h1>
+                <p style="opacity: 0.8; font-size: 14px;">本地轻量级 · 数据持久化</p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-primary" onclick="openAddCategory()">+ 添加分类</button>
+                <button class="btn btn-primary" onclick="openAddProduct()">+ 添加商品</button>
+            </div>
+        </div>
+
+        <!-- 统计卡片 -->
+        <div class="stats">
+            <div class="stat-card">
+                <div class="label">商品总数</div>
+                <div class="value" id="stat-products">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">库存总数</div>
+                <div class="value green" id="stat-quantity">0</div>
+                <span style="font-size: 14px; color: #9ca3af; margin-left: 4px;">件</span>
+            </div>
+            <div class="stat-card">
+                <div class="label">库存价值</div>
+                <div class="value purple" id="stat-value">0</div>
+                <span style="font-size: 14px; color: #9ca3af; margin-left: 4px;">元</span>
+            </div>
+            <div class="stat-card">
+                <div class="label">低库存商品</div>
+                <div class="value yellow" id="stat-lowstock">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">缺货商品</div>
+                <div class="value red" id="stat-outofstock">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">销售总额</div>
+                <div class="value" id="stat-sales">0</div>
+                <span style="font-size: 14px; color: #9ca3af; margin-left: 4px;">元</span>
+            </div>
+        </div>
+
+        <!-- 商品表格 -->
+        <div class="table-section">
+            <div class="table-header">
+                <h3>商品列表</h3>
+                <div class="search-box">
+                    <input type="text" id="search-input" placeholder="🔍 搜索商品名称或SKU..." oninput="searchProducts()">
+                </div>
+            </div>
+            <div class="table-body">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>SKU</th>
+                            <th>名称</th>
+                            <th>分类</th>
+                            <th>售价</th>
+                            <th>成本</th>
+                            <th>库存</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="product-table-body">
+                        <tr>
+                            <td colspan="8" class="empty-state">
+                                <div class="icon">📦</div>
+                                <p>加载中...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加/编辑分类模态框 -->
+    <div class="modal-overlay" id="category-modal">
+        <div class="modal">
+            <h3 id="category-modal-title">添加分类</h3>
+            <form id="category-form">
+                <input type="hidden" id="category-id">
+                <div class="form-group">
+                    <label>分类名称 *</label>
+                    <input type="text" id="category-name" placeholder="如：上衣、裤子、裙子" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn" onclick="closeModal('category-modal')">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 添加/编辑商品模态框 -->
+    <div class="modal-overlay" id="product-modal">
+        <div class="modal">
+            <h3 id="product-modal-title">添加商品</h3>
+            <form id="product-form">
+                <input type="hidden" id="product-id">
+                <div class="form-group">
+                    <label>SKU *</label>
+                    <input type="text" id="product-sku" placeholder="如：T001" required>
+                </div>
+                <div class="form-group">
+                    <label>商品名称 *</label>
+                    <input type="text" id="product-name" placeholder="如：白色T恤" required>
+                </div>
+                <div class="form-group">
+                    <label>分类</label>
+                    <select id="product-category" onchange="updateProfitDisplay()">
+                        <option value="">-- 请选择 --</option>
+                    </select>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label>售价 (元) *</label>
+                        <input type="number" id="product-price" step="0.01" min="0" placeholder="0.00" required>
+                    </div>
+                    <div class="form-group">
+                        <label>成本 (元)</label>
+                        <input type="number" id="product-cost" step="0.01" min="0" placeholder="0.00">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label>初始库存</label>
+                        <input type="number" id="product-quantity" min="0" placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <label>低库存预警</label>
+                        <input type="number" id="product-threshold" min="0" placeholder="10">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn" onclick="closeModal('product-modal')">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 交易模态框 -->
+    <div class="modal-overlay" id="transaction-modal">
+        <div class="modal">
+            <h3 id="transaction-modal-title">销售商品</h3>
+            <input type="hidden" id="transaction-product-id">
+            <input type="hidden" id="transaction-type">
+            <div class="form-group">
+                <label>数量 *</label>
+                <input type="number" id="transaction-quantity" min="1" placeholder="1">
+            </div>
+            <div class="form-group">
+                <label>备注</label>
+                <input type="text" id="transaction-note" placeholder="可选">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn" onclick="closeModal('transaction-modal')">取消</button>
+                <button type="button" class="btn btn-primary" onclick="submitTransaction()">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提示信息 -->
+    <div id="toast" style="
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 2000;
+        display: none;
+        font-weight: 500;
+    "></div>
+
+    <script>
+        let categories = [];
+        let products = [];
+        let stats = {};
+        let currentProduct = null;
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCategories();
+            loadProducts();
+            loadStats();
+        });
+
+        // 加载分类
+        async function loadCategories() {
+            try {
+                const resp = await fetch('/api/categories');
+                const data = await resp.json();
+                categories = data.categories;
+                populateCategorySelect();
+            } catch (e) {
+                console.error('Load categories error:', e);
+            }
+        }
+
+        // 填充分类下拉框
+        function populateCategorySelect() {
+            const select = document.getElementById('product-category');
+            select.innerHTML = '<option value="">-- 请选择 --</option>';
+            categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.id;
+                option.textContent = cat.name;
+                select.appendChild(option);
+            });
+        }
+
+        // 加载商品
+        async function loadProducts() {
+            try {
+                const resp = await fetch('/api/products');
+                products = await resp.json();
+                renderProducts(products);
+            } catch (e) {
+                console.error('Load products error:', e);
+            }
+        }
+
+        // 搜索商品
+        async function searchProducts() {
+            const keyword = document.getElementById('search-input').value.trim();
+            if (!keyword) {
+                loadProducts();
+                return;
+            }
+            try {
+                const resp = await fetch(`/api/products?search=${encodeURIComponent(keyword)}`);
+                const data = await resp.json();
+                renderProducts(data);
+            } catch (e) {
+                console.error('Search error:', e);
+            }
+        }
+
+        // 渲染商品表格
+        function renderProducts(data) {
+            const tbody = document.getElementById('product-table-body');
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="empty-state">
+                            <div class="icon">📦</div>
+                            <p>暂无数据</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = data.map(p => {
+                const status = getStatus(p);
+                return `
+                    <tr>
+                        <td style="font-weight: 500; color: #6b7280;">${p.sku}</td>
+                        <td style="font-weight: 500;">${p.name}</td>
+                        <td>${p.category_name || '-'}</td>
+                        <td>¥${p.price.toFixed(2)}</td>
+                        <td>¥${p.cost.toFixed(2)}</td>
+                        <td style="font-weight: 600;">${p.quantity}</td>
+                        <td><span class="badge ${status.class}">${status.text}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-success" onclick="openTransaction(${p.id}, 'sale')">销售</button>
+                            <button class="btn btn-sm btn-warning" onclick="openTransaction(${p.id}, 'purchase')">采购</button>
+                            <button class="btn btn-sm" onclick="openEditProduct(${p.id})">编辑</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteProduct(${p.id})">删除</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // 获取库存状态
+        function getStatus(p) {
+            if (p.quantity === 0) {
+                return { text: '缺货', class: 'badge-red' };
+            } else if (p.quantity <= (p.low_stock_threshold || 10)) {
+                return { text: '低库存', class: 'badge-yellow' };
+            } else {
+                return { text: '正常', class: 'badge-green' };
+            }
+        }
+
+        // 加载统计
+        async function loadStats() {
+            try {
+                const resp = await fetch('/api/stats');
+                stats = await resp.json();
+                document.getElementById('stat-products').textContent = stats.total_products;
+                document.getElementById('stat-quantity').textContent = stats.total_quantity;
+                document.getElementById('stat-value').textContent = '¥' + stats.total_value.toFixed(2);
+                document.getElementById('stat-lowstock').textContent = stats.low_stock_count;
+                document.getElementById('stat-outofstock').textContent = stats.out_of_stock_count;
+                document.getElementById('stat-sales').textContent = '¥' + stats.total_sales.toFixed(2);
+            } catch (e) {
+                console.error('Load stats error:', e);
+            }
+        }
+
+        // ==================== 分类操作 ====================
+
+        function openAddCategory() {
+            document.getElementById('category-modal-title').textContent = '添加分类';
+            document.getElementById('category-id').value = '';
+            document.getElementById('category-name').value = '';
+            document.getElementById('category-modal').style.display = 'flex';
+        }
+
+        document.getElementById('category-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('category-id').value;
+            const name = document.getElementById('category-name').value.trim();
+            
+            if (!name) return showToast('请输入分类名称', 'error');
+
+            try {
+                const url = id ? `/api/categories/${id}` : '/api/categories';
+                const method = id ? 'PUT' : 'POST';
+                const resp = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name })
+                });
+                
+                if (resp.ok) {
+                    closeModal('category-modal');
+                    loadCategories();
+                    loadProducts();
+                    showToast('保存成功', 'success');
+                } else {
+                    const err = await resp.json().catch(() => ({ error: 'Unknown error' }));
+                    showToast(err.error || '保存失败', 'error');
+                }
+            } catch (err) {
+                showToast('保存失败: ' + err.message, 'error');
+            }
+        });
+
+        // ==================== 商品操作 ====================
+
+        function openAddProduct() {
+            document.getElementById('product-modal-title').textContent = '添加商品';
+            document.getElementById('product-id').value = '';
+            document.getElementById('product-sku').value = '';
+            document.getElementById('product-name').value = '';
+            document.getElementById('product-category').value = '';
+            document.getElementById('product-price').value = '';
+            document.getElementById('product-cost').value = '';
+            document.getElementById('product-quantity').value = '';
+            document.getElementById('product-threshold').value = '10';
+            document.getElementById('product-modal').style.display = 'flex';
+        }
+
+        function openEditProduct(id) {
+            const p = products.find(x => x.id === id);
+            if (!p) return;
+            
+            document.getElementById('product-modal-title').textContent = '编辑商品';
+            document.getElementById('product-id').value = p.id;
+            document.getElementById('product-sku').value = p.sku;
+            document.getElementById('product-name').value = p.name;
+            document.getElementById('product-category').value = p.category_id || '';
+            document.getElementById('product-price').value = p.price;
+            document.getElementById('product-cost').value = p.cost;
+            document.getElementById('product-quantity').value = p.quantity;
+            document.getElementById('product-threshold').value = p.low_stock_threshold;
+            document.getElementById('product-modal').style.display = 'flex';
+        }
+
+        document.getElementById('product-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('product-id').value;
+            const sku = document.getElementById('product-sku').value.trim();
+            const name = document.getElementById('product-name').value.trim();
+            const category_id = document.getElementById('product-category').value;
+            const price = float(document.getElementById('product-price').value);
+            const cost = float(document.getElementById('product-cost').value);
+            const quantity = int(document.getElementById('product-quantity').value);
+            const threshold = int(document.getElementById('product-threshold').value);
+            
+            if (!sku) return showToast('SKU 不能为空', 'error');
+            if (!name) return showToast('商品名称不能为空', 'error');
+
+            const data = {
+                sku: sku,
+                name: name,
+                category_id: category_id || null,
+                price: price,
+                cost: cost,
+                quantity: quantity,
+                low_stock_threshold: threshold
+            };
+
+            try {
+                const url = id ? `/api/products/${id}` : '/api/products';
+                const method = id ? 'PUT' : 'POST';
+                const resp = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (resp.ok) {
+                    closeModal('product-modal');
+                    loadProducts();
+                    loadStats();
+                    showToast('保存成功', 'success');
+                } else {
+                    const err = await resp.json().catch(() => ({ error: 'Unknown error' }));
+                    showToast(err.error || '保存失败', 'error');
+                }
+            } catch (err) {
+                showToast('保存失败: ' + err.message, 'error');
+            }
+        });
+
+        async function deleteProduct(id) {
+            if (!confirm('确定删除该商品？')) return;
+            try {
+                const resp = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+                if (resp.ok) {
+                    loadProducts();
+                    loadStats();
+                    showToast('删除成功', 'success');
+                } else {
+                    const err = await resp.json().catch(() => ({ error: 'Unknown error' }));
+                    showToast(err.error || '删除失败', 'error');
+                }
+            } catch (err) {
+                showToast('删除失败: ' + err.message, 'error');
+            }
+        }
+
+        // ==================== 交易操作 ====================
+
+        function openTransaction(productId, type) {
+            const p = products.find(x => x.id === productId);
+            if (!p) return;
+            
+            const typeMap = {
+                sale: { title: '销售商品', btn: 'btn-success' },
+                purchase: { title: '采购入库', btn: 'btn-warning' }
+            };
+            
+            const info = typeMap[type];
+            document.getElementById('transaction-modal-title').textContent = info.title;
+            document.getElementById('transaction-product-id').value = productId;
+            document.getElementById('transaction-type').value = type;
+            document.getElementById('transaction-quantity').value = '1';
+            document.getElementById('transaction-note').value = '';
+            document.getElementById('transaction-modal').style.display = 'flex';
+        }
+
+        async function submitTransaction() {
+            const productId = document.getElementById('transaction-product-id').value;
+            const type = document.getElementById('transaction-type').value;
+            const quantity = int(document.getElementById('transaction-quantity').value);
+            const note = document.getElementById('transaction-note').value.trim();
+            
+            if (quantity <= 0) return showToast('数量必须大于0', 'error');
+
+            try {
+                const resp = await fetch('/api/transactions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        product_id: productId,
+                        type: type,
+                        quantity: quantity,
+                        note: note
+                    })
+                });
+                
+                if (resp.ok) {
+                    const data = await resp.json();
+                    closeModal('transaction-modal');
+                    loadProducts();
+                    loadStats();
+                    showToast('交易成功，新库存：' + data.new_quantity, 'success');
+                } else {
+                    const err = await resp.json().catch(() => ({ error: 'Unknown error' }));
+                    showToast(err.error || '交易失败', 'error');
+                }
+            } catch (err) {
+                showToast('交易失败: ' + err.message, 'error');
+            }
+        }
+
+        // ==================== 通用函数 ====================
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.backgroundColor = type === 'success' ? '#10b981' : '#ef4444';
+            toast.style.color = 'white';
+            toast.style.display = 'block';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+
+        function float(val) {
+            const f = parseFloat(val);
+            return isNaN(f) ? 0 : f;
+        }
+
+        function int(val) {
+            const i = parseInt(val);
+            return isNaN(i) ? 0 : i;
+        }
+    </script>
+</body>
+</html>
